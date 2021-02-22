@@ -11,6 +11,8 @@ import (
 	"os"
 )
 
+const DefaultConfigPath = "config.json"
+
 type Config struct {
 	Port        int               `json:"port"`
 	DefaultPath string            `json:"default_path"`
@@ -18,7 +20,7 @@ type Config struct {
 }
 
 func GetConfigPath() string {
-	configPath := flag.String("f", "config.json", "A config file path")
+	configPath := flag.String("f", DefaultConfigPath, "A config file path")
 	flag.Parse()
 	return *configPath
 }
