@@ -1,0 +1,8 @@
+{
+    "port": 3000,
+    "default_path": "https://golang.org/",
+    "paths": {
+        "/go-youtube": "https://youtube.com/",
+        "/go-gh": "https://github.com."
+    }
+}
