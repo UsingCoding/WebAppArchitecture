@@ -19,4 +19,5 @@ echo_call() {
 # shellcheck disable=SC2086
 echo_call go build -v \
     -o "$EXECUTABLE_PATH" \
+    -ldflags="-X main.appID=orderservice" \
     $GO_SRC_FILES

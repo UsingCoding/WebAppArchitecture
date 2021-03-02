@@ -11,9 +11,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var appID = "UNKNOWN"
+
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
-	file, err := os.OpenFile("dev.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+
+	config, err := parseEnv()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	file, err := os.OpenFile(config.LogPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err == nil {
 		log.SetOutput(file)
 		defer file.Close()
@@ -21,8 +29,7 @@ func main() {
 
 	killSignalChan := getKillSignalChan()
 
-	addr := ":8000"
-	server := startServer(addr)
+	server := startServer(config.ServeHTTPAddress)
 	waitForKillSignal(killSignalChan)
 	err = server.Shutdown(context.Background())
 	if err != nil {
