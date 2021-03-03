@@ -1,0 +1,10 @@
+version: "3.3"
+
+services:
+    db:
+        image: percona
+        container_name: go_app_db
+        environment:
+            MYSQL_ROOT_PASSWORD: 1234
+        ports:
+            - 3306:3306

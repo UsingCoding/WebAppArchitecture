@@ -2,9 +2,11 @@ package transport
 
 import (
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -30,11 +32,20 @@ type getOrdersResponse struct {
 	Orders []order `json:"orders"`
 }
 
+type createOrderRequest struct {
+	Items []orderItem `json:"menuItems"`
+}
+
+type createOrderResponse struct {
+	ID uuid.UUID `json:"id"`
+}
+
 func NewRouter() http.Handler {
 	router := mux.NewRouter()
 	s := router.PathPrefix("/api/v1").Subrouter()
 	s.HandleFunc("/order/{orderID}", getOrder).Methods(http.MethodGet)
 	s.HandleFunc("/orders", getOrders).Methods(http.MethodGet)
+	s.HandleFunc("/order", createOrder).Methods(http.MethodPost)
 
 	return logMiddleware(router)
 }
@@ -82,6 +93,45 @@ func getOrders(w http.ResponseWriter, _ *http.Request) {
 
 	err := writeJsonResponse(w, response)
 
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func createOrder(w http.ResponseWriter, req *http.Request) {
+	bytes, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	defer req.Body.Close()
+
+	var requestData createOrderRequest
+	err = json.Unmarshal(bytes, &requestData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if len(requestData.Items) == 0 {
+		response := struct {
+			Message string `json:"message"`
+		}{
+			Message: "empty order items",
+		}
+		err = writeJsonResponse(w, response)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+
+	orderID := uuid.New()
+
+	err = writeJsonResponse(w, createOrderResponse{ID: orderID})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
