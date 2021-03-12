@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"orderservice/pkg/orderservice/domain/service"
+	"orderservice/pkg/orderservice/infrastructure/mysql/query"
 	"orderservice/pkg/orderservice/infrastructure/mysql/repository"
 	"orderservice/pkg/orderservice/infrastructure/transport"
 	"os"
@@ -32,18 +33,22 @@ func main() {
 
 	defer db.Close()
 
-	file, err := os.OpenFile(config.LogPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err == nil {
-		//log.SetOutput(file)
-		defer file.Close()
-	}
-
 	killSignalChan := getKillSignalChan()
 
 	orderRepo := repository.NewOrderRepository(db)
 	orderService := service.NewOrderService(orderRepo)
 
-	server := startServer(config.ServeHTTPAddress, transport.NewServer(orderService, orderRepo))
+	menuItemRepo := repository.NewMenuItemRepository(db)
+	menuItemService := service.NewMenuItemService(menuItemRepo)
+	menuItemQueryService := query.NewMenuItemQueryService(db)
+
+	server := startServer(config.ServeHTTPAddress, transport.NewServer(
+		orderService,
+		orderRepo,
+		menuItemService,
+		menuItemQueryService,
+	))
+
 	waitForKillSignal(killSignalChan)
 	err = server.Shutdown(context.Background())
 	if err != nil {

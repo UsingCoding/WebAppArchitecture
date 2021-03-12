@@ -10,8 +10,8 @@ type Order struct {
 }
 
 type MenuItem struct {
-	ID       uuid.UUID
-	Quantity int
+	ID   uuid.UUID
+	Name string
 }
 
 type OrderRepository interface {
@@ -19,8 +19,11 @@ type OrderRepository interface {
 	FindOrder(id uuid.UUID) (Order, error)
 	AddOrder(order Order) error
 	RemoveOrder(id uuid.UUID)
+}
 
-	GetMenuItems(ids []uuid.UUID) ([]MenuItem, error)
-	AddMenuItem(order Order) error
-	RemoveMenuItem(id uuid.UUID)
+type MenuItemRepository interface {
+	GetNextId() uuid.UUID
+	FindMenuItem(id uuid.UUID) (MenuItem, error)
+	AddMenuItem(item MenuItem) error
+	RemoveMenuItem(id uuid.UUID) error
 }

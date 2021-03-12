@@ -14,7 +14,6 @@ func parseEnv() (*config, error) {
 }
 
 type config struct {
-	LogPath          string `envconfig:"log_dir" default:"./var/log/dev.log"`
 	ServeHTTPAddress string `envconfig:"serve_http_address" default:":8000"`
 	DatabaseDriver   string `envconfig:"db_driver" default:"mysql"`
 	DSN              string `envconfig:"dsn" default:"root:1234@/orderservice"`

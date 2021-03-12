@@ -57,27 +57,10 @@ func (repo *orderRepository) RemoveOrder(id uuid.UUID) {
 	panic("implement me")
 }
 
-func (repo *orderRepository) GetMenuItems(ids []uuid.UUID) ([]model.MenuItem, error) {
-	panic("implement me")
-}
-
-func (repo *orderRepository) AddMenuItem(order model.Order) error {
-	panic("implement me")
-}
-
-func (repo *orderRepository) RemoveMenuItem(id uuid.UUID) {
-	panic("implement me")
-}
-
 type sqlxOrder struct {
 	ID                 uuid.UUID `db:"id"`
 	OrderedAtTimestamp int64
 	Cost               int
-}
-
-type sqlxMenuItem struct {
-	ID       uuid.UUID `db:"id"`
-	Quantity int       `db:"integer"`
 }
 
 func (repo orderRepository) getOrder(id uuid.UUID) (model.Order, error) {
@@ -112,8 +95,7 @@ func (repo orderRepository) getOrder(id uuid.UUID) (model.Order, error) {
 
 	for _, menuItem := range menuItems {
 		domainOrder.Items = append(domainOrder.Items, model.MenuItem{
-			ID:       menuItem.ID,
-			Quantity: menuItem.Quantity,
+			ID: menuItem.ID,
 		})
 	}
 
@@ -136,7 +118,6 @@ func convertToOrderView(order model.Order) query.OrderView {
 
 func getMenuItemView(item model.MenuItem) query.MenuItemView {
 	return query.MenuItemView{
-		ID:       item.ID,
-		Quantity: item.Quantity,
+		ID: item.ID,
 	}
 }

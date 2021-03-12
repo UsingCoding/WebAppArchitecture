@@ -11,5 +11,6 @@ type OrderView struct {
 
 type MenuItemView struct {
 	ID       uuid.UUID
+	Name     string
 	Quantity int
 }
