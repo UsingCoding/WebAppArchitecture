@@ -2,7 +2,6 @@ CREATE TABLE `order`
 (
     `order_id` BINARY(16) NOT NULL,
     `ordered_at_timestamp` INTEGER NOT NULL ,
-    `cost` INTEGER NOT NULL,
     PRIMARY KEY (`order_id`),
     INDEX `order_id_index` (`order_id`)
 );
@@ -11,6 +10,7 @@ CREATE TABLE `menu_item`
 (
     `menu_item_id` BINARY(16) NOT NULL,
     `name` VARCHAR(255) NOT NULL,
+    `price` INTEGER NOT NULL,
     PRIMARY KEY (`menu_item_id`),
     INDEX `menu_item_id_index` (`menu_item_id`)
 );

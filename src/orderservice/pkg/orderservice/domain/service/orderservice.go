@@ -1,45 +1,51 @@
 package service
 
 import (
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"orderservice/pkg/orderservice/domain/model"
 	"time"
 )
 
-type OrderService interface {
-	CreateOrder(items []model.MenuItem, cost int) (model.Order, error)
-}
-
-func NewOrderService(repo model.OrderRepository) OrderService {
-	return &orderService{repo: repo}
-}
-
 var (
-	ErrInvalidPrice            = errors.New("invalid price for order")
-	ErrIncorrectMenuItemsCount = errors.New("menu items must more than 0")
+	ErrIncorrectMenuItemsCount = errors.New("menu items must be more than 0")
+	ErrSomeMenuItemsNotFound   = errors.New("some menu items not found")
 )
 
-type orderService struct {
-	repo model.OrderRepository
+type OrderService interface {
+	CreateOrder(menuItemsIDs []uuid.UUID) (model.Order, error)
 }
 
-func (service *orderService) CreateOrder(items []model.MenuItem, cost int) (model.Order, error) {
-	if cost < 0 {
-		return model.Order{}, ErrInvalidPrice
+func NewOrderService(orderRepository model.OrderRepository, menuItemRepository model.MenuItemRepository) OrderService {
+	return &orderService{orderRepository: orderRepository, menuItemRepository: menuItemRepository}
+}
+
+type orderService struct {
+	orderRepository    model.OrderRepository
+	menuItemRepository model.MenuItemRepository
+}
+
+func (service *orderService) CreateOrder(menuItemsIDs []uuid.UUID) (model.Order, error) {
+	if len(menuItemsIDs) == 0 {
+		return model.Order{}, ErrIncorrectMenuItemsCount
 	}
 
-	//if len(items) == 0 {
-	//	return model.Order{}, ErrIncorrectMenuItemsCount
-	//}
+	menuItems, err := service.menuItemRepository.FindMenuItems(menuItemsIDs)
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	if len(menuItems) != len(menuItemsIDs) {
+		return model.Order{}, ErrSomeMenuItemsNotFound
+	}
 
 	order := model.Order{
-		ID:                 service.repo.GetNextId(),
-		Items:              items,
+		ID:                 service.orderRepository.GetNextId(),
+		MenuItemIDs:        menuItemsIDs,
 		OrderedAtTimestamp: time.Now().Unix(),
-		Cost:               cost,
 	}
 
-	err := service.repo.AddOrder(order)
+	err = service.orderRepository.AddOrder(order)
 	if err != nil {
 		return model.Order{}, err
 	}

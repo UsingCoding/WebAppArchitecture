@@ -3,7 +3,7 @@ package service
 import "orderservice/pkg/orderservice/domain/model"
 
 type MenuItemService interface {
-	CreateMenuItem(name string) (model.MenuItem, error)
+	CreateMenuItem(name string, price uint) (model.MenuItem, error)
 }
 
 func NewMenuItemService(repo model.MenuItemRepository) *menuItemService {
@@ -14,10 +14,11 @@ type menuItemService struct {
 	repo model.MenuItemRepository
 }
 
-func (service *menuItemService) CreateMenuItem(name string) (model.MenuItem, error) {
+func (service *menuItemService) CreateMenuItem(name string, price uint) (model.MenuItem, error) {
 	menuItem := model.MenuItem{
-		ID:   service.repo.GetNextId(),
-		Name: name,
+		ID:    service.repo.GetNextId(),
+		Name:  name,
+		Price: price,
 	}
 
 	err := service.repo.AddMenuItem(menuItem)

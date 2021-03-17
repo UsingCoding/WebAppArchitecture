@@ -4,14 +4,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	"orderservice/pkg/orderservice/app/query"
 	"orderservice/pkg/orderservice/domain/model"
 	"strings"
 )
 
 type OrderRepository interface {
 	model.OrderRepository
-	query.OrderQueryService
 }
 
 func NewOrderRepository(db *sqlx.DB) OrderRepository {
@@ -22,48 +20,11 @@ type orderRepository struct {
 	db *sqlx.DB
 }
 
-func (repo *orderRepository) GetOrderView(id uuid.UUID) (query.OrderView, error) {
-	domainOrder, err := repo.getOrder(id)
-	if err != nil {
-		return query.OrderView{}, err
-	}
-
-	return convertToOrderView(domainOrder), nil
-}
-
 func (repo *orderRepository) GetNextId() uuid.UUID {
 	return uuid.New()
 }
 
 func (repo *orderRepository) FindOrder(id uuid.UUID) (model.Order, error) {
-	return repo.getOrder(id)
-}
-
-func (repo *orderRepository) AddOrder(order model.Order) error {
-	insertSql := `INSERT INTO ||order|| VALUES (?, ?, ?)`
-	insertSql = strings.Replace(insertSql, "||", "`", -1)
-
-	binaryUUID, _ := order.ID.MarshalBinary()
-
-	_, err := repo.db.Exec(insertSql, binaryUUID, order.OrderedAtTimestamp, order.Cost)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (repo *orderRepository) RemoveOrder(id uuid.UUID) {
-	panic("implement me")
-}
-
-type sqlxOrder struct {
-	ID                 uuid.UUID `db:"id"`
-	OrderedAtTimestamp int64
-	Cost               int
-}
-
-func (repo orderRepository) getOrder(id uuid.UUID) (model.Order, error) {
 	const orderSql = `SELECT * FROM order WHERE order.order_id = ?`
 	order := sqlxOrder{}
 
@@ -75,49 +36,58 @@ func (repo orderRepository) getOrder(id uuid.UUID) (model.Order, error) {
 	}
 
 	const menuItemSql = `
-		SELECT * 
+		SELECT menu_item.menu_item_id
 		FROM menu_item
 		LEFT JOIN order_has_menu_item
 		WHERE order_has_menu_item.order_id = ?`
 
-	var menuItems []sqlxMenuItem
-	err = repo.db.Select(&menuItems, menuItemSql, id)
+	var ids []uuid.UUID
+	err = repo.db.Select(&ids, menuItemSql, id)
 	if err != nil {
 		return model.Order{}, errors.WithStack(err)
 	}
 
-	domainOrder := model.Order{
+	return model.Order{
 		ID:                 order.ID,
-		Items:              nil,
+		MenuItemIDs:        ids,
 		OrderedAtTimestamp: order.OrderedAtTimestamp,
-		Cost:               order.Cost,
-	}
-
-	for _, menuItem := range menuItems {
-		domainOrder.Items = append(domainOrder.Items, model.MenuItem{
-			ID: menuItem.ID,
-		})
-	}
-
-	return domainOrder, err
+	}, err
 }
 
-func convertToOrderView(order model.Order) query.OrderView {
-	orderItemViews := make([]query.MenuItemView, len(order.Items))
-	for i, item := range order.Items {
-		orderItemViews[i] = getMenuItemView(item)
+func (repo *orderRepository) AddOrder(order model.Order) error {
+	insertSql := `INSERT INTO ||order|| VALUES (?, ?)`
+	insertSql = strings.Replace(insertSql, "||", "`", -1)
+
+	binaryUUID, _ := order.ID.MarshalBinary()
+
+	_, err := repo.db.Exec(insertSql, binaryUUID, order.OrderedAtTimestamp)
+	if err != nil {
+		return err
 	}
 
-	return query.OrderView{
-		ID:                 order.ID,
-		Items:              orderItemViews,
-		OrderedAtTimestamp: order.OrderedAtTimestamp,
-		Cost:               order.Cost,
-	}
+	return nil
 }
 
-func getMenuItemView(item model.MenuItem) query.MenuItemView {
-	return query.MenuItemView{
-		ID: item.ID,
+func (repo *orderRepository) RemoveOrder(id uuid.UUID) {
+	panic("implement me")
+}
+
+func (repo orderRepository) addItemsToOrder(orderID uuid.UUID, menuItemsIDs []uuid.UUID, quantity uint) error {
+	const insertSql = `INSERT INTO order_has_menu_item VALUES (?, ?, ?)`
+	binaryOrderID, _ := orderID.MarshalBinary()
+
+	for _, menuItemID := range menuItemsIDs {
+		binaryMenuItemID, _ := menuItemID.MarshalBinary()
+		_, err := repo.db.Exec(insertSql, uuid.New(), binaryOrderID, binaryMenuItemID, quantity)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
+}
+
+type sqlxOrder struct {
+	ID                 uuid.UUID `db:"id"`
+	OrderedAtTimestamp int64     `db:"ordered_at_timestamp"`
 }

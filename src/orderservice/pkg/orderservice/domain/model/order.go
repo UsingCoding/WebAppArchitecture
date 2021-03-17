@@ -4,14 +4,14 @@ import "github.com/google/uuid"
 
 type Order struct {
 	ID                 uuid.UUID
-	Items              []MenuItem
+	MenuItemIDs        []uuid.UUID
 	OrderedAtTimestamp int64
-	Cost               int
 }
 
 type MenuItem struct {
-	ID   uuid.UUID
-	Name string
+	ID    uuid.UUID
+	Name  string
+	Price uint
 }
 
 type OrderRepository interface {
@@ -24,6 +24,7 @@ type OrderRepository interface {
 type MenuItemRepository interface {
 	GetNextId() uuid.UUID
 	FindMenuItem(id uuid.UUID) (MenuItem, error)
+	FindMenuItems(ids []uuid.UUID) ([]MenuItem, error)
 	AddMenuItem(item MenuItem) error
 	RemoveMenuItem(id uuid.UUID) error
 }

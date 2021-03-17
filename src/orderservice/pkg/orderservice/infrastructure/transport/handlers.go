@@ -31,7 +31,7 @@ type getOrdersResponse struct {
 }
 
 type createOrderRequest struct {
-	Items []orderItem `json:"menuItems"`
+	MenuItemsIDs []uuid.UUID `json:"menu_items_ids"`
 }
 
 type createOrderResponse struct {
@@ -39,7 +39,8 @@ type createOrderResponse struct {
 }
 
 type createMenuItemRequest struct {
-	Name string `json:"name"`
+	Name  string `json:"name"`
+	Price uint   `json:"price"`
 }
 
 type createMenuItemResponse struct {
@@ -133,7 +134,7 @@ func (s *Server) createOrder(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if len(requestData.Items) == 0 {
+	if len(requestData.MenuItemsIDs) == 0 {
 		response := struct {
 			Message string `json:"message"`
 		}{
@@ -147,7 +148,7 @@ func (s *Server) createOrder(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	order, err := s.orderService.CreateOrder(nil, 50)
+	order, err := s.orderService.CreateOrder(requestData.MenuItemsIDs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -176,7 +177,7 @@ func (s *Server) createMenuItem(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	menuItem, err := s.menuItemService.CreateMenuItem(requestData.Name)
+	menuItem, err := s.menuItemService.CreateMenuItem(requestData.Name, requestData.Price)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

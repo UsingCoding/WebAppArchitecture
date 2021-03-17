@@ -35,16 +35,17 @@ func main() {
 
 	killSignalChan := getKillSignalChan()
 
-	orderRepo := repository.NewOrderRepository(db)
-	orderService := service.NewOrderService(orderRepo)
-
 	menuItemRepo := repository.NewMenuItemRepository(db)
 	menuItemService := service.NewMenuItemService(menuItemRepo)
 	menuItemQueryService := query.NewMenuItemQueryService(db)
 
+	orderRepo := repository.NewOrderRepository(db)
+	orderService := service.NewOrderService(orderRepo, menuItemRepo)
+	orderQueryService := query.NewOrderQueryService(db, menuItemQueryService)
+
 	server := startServer(config.ServeHTTPAddress, transport.NewServer(
 		orderService,
-		orderRepo,
+		orderQueryService,
 		menuItemService,
 		menuItemQueryService,
 	))
