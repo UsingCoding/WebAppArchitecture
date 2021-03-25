@@ -68,8 +68,17 @@ func (repo *orderRepository) AddOrder(order model.Order) error {
 	return nil
 }
 
-func (repo *orderRepository) RemoveOrder(id uuid.UUID) {
-	panic("implement me")
+func (repo *orderRepository) RemoveOrder(id uuid.UUID) error {
+	removeSql := `DELETE FROM ||order|| WHERE order_id = ?`
+	removeSql = strings.Replace(removeSql, "||", "`", -1)
+	binaryOrderID, _ := id.MarshalBinary()
+
+	_, err := repo.db.Exec(removeSql, binaryOrderID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (repo orderRepository) addItemsToOrder(orderID uuid.UUID, menuItemsIDs []uuid.UUID, quantity uint) error {

@@ -18,7 +18,7 @@ type OrderRepository interface {
 	GetNextId() uuid.UUID
 	FindOrder(id uuid.UUID) (Order, error)
 	AddOrder(order Order) error
-	RemoveOrder(id uuid.UUID)
+	RemoveOrder(id uuid.UUID) error
 }
 
 type MenuItemRepository interface {

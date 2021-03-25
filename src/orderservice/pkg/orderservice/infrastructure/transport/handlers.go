@@ -6,24 +6,24 @@ import (
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
-	"strconv"
-	"time"
 )
 
 type order struct {
-	ID    string `json:"id"`
-	Items []orderItem
+	ID                 uuid.UUID `json:"id"`
+	Items              []orderItem
+	OrderedAtTimeStamp int64 `json:"orderedAtTimeStamp"`
+	Cost               uint  `json:"cost"`
 }
 
 type orderItem struct {
-	Id       string `json:"id"`
-	Quantity int    `json:"quantity"`
+	Id       uuid.UUID `json:"id"`
+	Quantity uint      `json:"quantity"`
+	Name     string    `json:"name"`
+	Price    uint      `json:"price"`
 }
 
 type getOrderResponse struct {
 	order
-	OrderedAtTimeStamp string `json:"orderedAtTimeStamp"`
-	Cost               int    `json:"cost"`
 }
 
 type getOrdersResponse struct {
@@ -44,10 +44,6 @@ type createMenuItemRequest struct {
 }
 
 type createMenuItemResponse struct {
-	ID uuid.UUID `json:"id"`
-}
-
-type getMenuItemRequest struct {
 	ID uuid.UUID `json:"id"`
 }
 
@@ -76,21 +72,28 @@ func (s *Server) getOrder(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	response := getOrderResponse{
-		order: order{
-			ID: orderId,
-			Items: []orderItem{
-				{
-					Id:       orderId,
-					Quantity: 25,
-				},
-			},
-		},
-		OrderedAtTimeStamp: strconv.FormatInt(time.Now().Unix(), 10),
-		Cost:               999,
+	id, err := uuid.Parse(orderId)
+	if err != nil {
+		setBadRequestResponse(w, "OrderId invalid")
+		return
 	}
 
-	err := writeJsonResponse(w, response)
+	orderView, err := s.orderQueryService.GetOrderView(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := getOrderResponse{
+		order{
+			ID:                 orderView.ID,
+			Items:              convertToMenuItems(orderView.Items),
+			OrderedAtTimeStamp: orderView.OrderedAtTimestamp,
+			Cost:               orderView.Cost,
+		},
+	}
+
+	err = writeJsonResponse(w, response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -98,19 +101,26 @@ func (s *Server) getOrder(w http.ResponseWriter, request *http.Request) {
 }
 
 func (s *Server) getOrders(w http.ResponseWriter, _ *http.Request) {
-	response := getOrdersResponse{
-		Orders: []order{
-			{
-				ID: "d290f1ee-6c56-4b01-90e6-d701748f0851",
-				Items: []orderItem{{
-					Id:       "f290d1ce-6c234-4b31-90e6-d701748f0851",
-					Quantity: 1,
-				}},
-			},
-		},
+	orders, err := s.orderQueryService.GetOrderViews()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	err := writeJsonResponse(w, response)
+	response := getOrdersResponse{
+		Orders: make([]order, len(orders)),
+	}
+
+	for i, orderView := range orders {
+		response.Orders[i] = order{
+			ID:                 orderView.ID,
+			Items:              convertToMenuItems(orderView.Items),
+			OrderedAtTimeStamp: orderView.OrderedAtTimestamp,
+			Cost:               orderView.Cost,
+		}
+	}
+
+	err = writeJsonResponse(w, response)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
