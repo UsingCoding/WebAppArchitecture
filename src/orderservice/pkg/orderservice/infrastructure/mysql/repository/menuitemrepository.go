@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -27,6 +28,9 @@ func (repo *menuItemRepository) FindMenuItem(id uuid.UUID) (model.MenuItem, erro
 
 	err := repo.db.Select(&menuItem, getMenuItemSql, binaryUUID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return model.MenuItem{}, model.ErrMenuItemNotFound
+		}
 		return model.MenuItem{}, errors.WithStack(err)
 	}
 

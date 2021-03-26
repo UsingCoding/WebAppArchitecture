@@ -1,6 +1,9 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+)
 
 type Order struct {
 	ID                 uuid.UUID
@@ -13,6 +16,11 @@ type MenuItem struct {
 	Name  string
 	Price uint
 }
+
+var (
+	ErrOrderNotFound    = errors.New("order not found")
+	ErrMenuItemNotFound = errors.New("menu item not found")
+)
 
 type OrderRepository interface {
 	GetNextId() uuid.UUID

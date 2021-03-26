@@ -1,6 +1,7 @@
 package query
 
 import (
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -23,6 +24,9 @@ func (service *menuItemQueryService) GetMenuItem(id uuid.UUID) (query.MenuItemVi
 
 	err := service.db.Get(&menuItem, getMenuItemSql, binaryUUID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return query.MenuItemView{}, query.ErrMenuItemViewNotFound
+		}
 		return query.MenuItemView{}, errors.WithStack(err)
 	}
 
@@ -34,7 +38,7 @@ func (service *menuItemQueryService) GetMenuItem(id uuid.UUID) (query.MenuItemVi
 }
 
 func (service *menuItemQueryService) GetMenuItemsForOrderWithQuantity(id uuid.UUID) ([]query.MenuItemWithQuantityView, error) {
-	const sql = `SELECT * 
+	const selectSql = `SELECT * 
 		FROM menu_item m
 		LEFT JOIN order_has_menu_item order_has ON m.menu_item_id = order_has.menu_item_id
 		WHERE order_has.order_id = ?`
@@ -42,7 +46,7 @@ func (service *menuItemQueryService) GetMenuItemsForOrderWithQuantity(id uuid.UU
 	var menuItemsWithQuantity []sqlxMenuItemWithQuantity
 	binaryUUID, _ := id.MarshalBinary()
 
-	err := service.db.Select(&menuItemsWithQuantity, sql, binaryUUID)
+	err := service.db.Select(&menuItemsWithQuantity, selectSql, binaryUUID)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

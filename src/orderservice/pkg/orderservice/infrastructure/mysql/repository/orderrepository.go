@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -32,6 +33,9 @@ func (repo *orderRepository) FindOrder(id uuid.UUID) (model.Order, error) {
 
 	err := repo.db.Select(&order, orderSql, binaryUUID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return model.Order{}, model.ErrOrderNotFound
+		}
 		return model.Order{}, errors.WithStack(err)
 	}
 

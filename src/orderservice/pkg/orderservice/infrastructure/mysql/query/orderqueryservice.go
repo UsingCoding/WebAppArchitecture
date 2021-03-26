@@ -1,6 +1,7 @@
 package query
 
 import (
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -26,6 +27,9 @@ func (service *orderQueryService) GetOrderView(id uuid.UUID) (query.OrderView, e
 
 	err := service.db.Select(&order, orderSql, binaryUUID)
 	if err != nil {
+		if err != sql.ErrNoRows {
+			return query.OrderView{}, query.ErrOrderNotFound
+		}
 		return query.OrderView{}, errors.WithStack(err)
 	}
 
